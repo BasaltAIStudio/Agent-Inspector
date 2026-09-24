@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgentInspector Report</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <h1>AgentInspector</h1>
+                <p class="tagline">Audit Report</p>
+            </div>
+            <nav>
+                <a href="/" class="nav-link">Home</a>
+                <a href="/dashboard" class="nav-link">Dashboard</a>
+            </nav>
+        </header>
+
+        <main>
+            <div id="report-container">
+                <div class="loading-state">Loading report...</div>
+            </div>
+        </main>
+
+        <footer>
+            <p> AgentInspector - Automated QA for AI Agents</p>
+        </footer>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const auditId = '{{ audit_id }}';
+            loadReport(auditId);
+        });
+    </script>
+</body>
+</html>

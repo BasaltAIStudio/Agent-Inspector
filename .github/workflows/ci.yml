@@ -1,0 +1,166 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  quality:
+    name: Lint and Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install -e ".[dev]"
+
+      - name: Ruff
+        run: ruff check .
+
+      - name: Mypy
+        run: mypy agentinspector backend
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: agentinspector
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: pass
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install -e ".[dev]"
+
+      - name: Setup PostgreSQL
+        env:
+          DATABASE_URL: "postgresql://postgres:pass@localhost:5432/agentinspector"
+        run: |
+          pg_isready -h localhost -p 5432 -U postgres
+          PGPASSWORD=pass psql -h localhost -U postgres -d agentinspector -c "SELECT 1"
+
+      - name: Pytest
+        env:
+          DATABASE_URL: "postgresql://postgres:pass@localhost:5432/agentinspector"
+        run: pytest -q
+
+  migrations:
+    name: Migrations
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: agentinspector
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: pass
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install -e ".[dev]"
+
+      - name: Setup PostgreSQL
+        env:
+          DATABASE_URL: "postgresql://postgres:pass@localhost:5432/agentinspector"
+        run: |
+          pg_isready -h localhost -p 5432 -U postgres
+          PGPASSWORD=pass psql -h localhost -U postgres -d agentinspector -c "SELECT 1"
+
+      - name: Alembic check
+        run: alembic check
+
+  cli:
+    name: CLI smoke
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: agentinspector
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: pass
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install -e ".[dev]"
+
+      - name: Setup PostgreSQL
+        env:
+          DATABASE_URL: "postgresql://postgres:pass@localhost:5432/agentinspector"
+        run: |
+          pg_isready -h localhost -p 5432 -U postgres
+          PGPASSWORD=pass psql -h localhost -U postgres -d agentinspector -c "SELECT 1"
+
+      - name: CLI smoke
+        env:
+          DATABASE_URL: "postgresql://postgres:pass@localhost:5432/agentinspector"
+        run: |
+          source .venv/bin/activate
+          alembic upgrade head
+          agentinspector --help
+          agentinspector list-audits

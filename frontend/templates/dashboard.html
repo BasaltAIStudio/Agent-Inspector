@@ -1,0 +1,139 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgentInspector | Quality Assurance</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <h1>AgentInspector</h1>
+                <p class="tagline">Agentic Validation Engine</p>
+            </div>
+            <nav>
+                <a href="/" class="nav-link">Home</a>
+                <a href="/dashboard" class="nav-link active">Dashboard</a>
+            </nav>
+        </header>
+
+        <main class="dashboard-grid">
+            <!-- LEFT COLUMN: CONFIGURATION -->
+            <aside class="config-panel">
+                <section class="agent-form-section">
+                    <div class="card">
+                        <h3>Connect Agent</h3>
+                        <form id="agent-form">
+                            <div class="form-group">
+                                <label for="agent-name">Agent Name</label>
+                                <input type="text" id="agent-name" required placeholder="Customer Support Bot">
+                            </div>
+                            <div class="form-group">
+                                <label for="agent-description">Description</label>
+                                <textarea id="agent-description" required placeholder="e.g. Handles refund requests"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="agent-type">Framework</label>
+                                <select id="agent-type">
+                                    <option value="custom">Custom Implementation</option>
+                                    <option value="openai">OpenAI Assistants</option>
+                                    <option value="langchain">LangChain / LangGraph</option>
+                                    <option value="crewai">CrewAI</option>
+                                    <option value="mcp">MCP Agent</option>
+                                    <option value="api">REST API</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="agent-endpoint">Endpoint</label>
+                                <input type="text" id="agent-endpoint" placeholder="https://api.example.com/agent">
+                            </div>
+                            <div class="form-group">
+                                <label for="agent-api-key">API Key</label>
+                                <input type="password" id="agent-api-key" placeholder="sk-...">
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">Connect Agent</button>
+                        </form>
+                    </div>
+                </section>
+
+                <section class="audit-form-section" id="audit-section" style="display: none;">
+                    <div class="card">
+                        <h3>Initialize Audit</h3>
+                        <form id="audit-form">
+                            <div class="form-group">
+                                <label for="expected-behavior">Expected Behavior</label>
+                                <textarea id="expected-behavior" required placeholder="The agent should correctly identify..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="prohibited-actions">Safety Guardrails</label>
+                                <textarea id="prohibited-actions" placeholder="The agent must never reveal..."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="test-count">Scan Intensity</label>
+                                <select id="test-count">
+                                    <option value="50">Quick Scan (50)</option>
+                                    <option value="100" selected>Standard (100)</option>
+                                    <option value="250">Deep (250)</option>
+                                    <option value="1000">Enterprise (1000)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="display: flex; gap: 12px; align-items: center; margin-top: 20px;">
+                                <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" id="include-security" checked>
+                                    <span style="font-size: 0.875rem;">Security Red-Teaming</span>
+                                </label>
+                                <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" id="include-cost" checked>
+                                    <span style="font-size: 0.875rem;">Cost Analysis</span>
+                                </label>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">Execute Audit</button>
+                        </form>
+                    </div>
+                </section>
+            </aside>
+
+            <!-- RIGHT COLUMN: RESULTS -->
+            <section class="results-panel">
+                <div class="dashboard-header" style="margin-bottom: 32px;">
+                    <h2>Agent Intelligence Monitor</h2>
+                    <p style="color: var(--text-muted);">Real-time validation and regression tracking</p>
+                </div>
+
+                <div class="card">
+                    <h3>Connected Agents</h3>
+                    <div id="agents-list">
+                        <p class="empty-state">No agents connected. Use the panel on the left to start.</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Recent Audit History</h3>
+                    <div id="audits-list">
+                        <p class="empty-state">No audits executed yet.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 AgentInspector &bull; Enterprise Agent Validation</p>
+        </footer>
+    </div>
+
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p>Executing generative red-teaming suite... <br><small>This involves cross-examination judges and may take a minute.</small></p>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "agentinspector"
+version = "0.5.0"
+description = "Automated QA, security, reliability, cost and compliance testing platform for AI agents."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [
+    { name = "AgentInspector Team" }
+]
+keywords = ["ai", "agent", "testing", "security", "qa", "llm"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "pydantic>=2.0",
+    "httpx>=0.27",
+    "tenacity>=8.2",
+    "rich>=13.0",
+    "python-dateutil>=2.8",
+    "pyyaml>=6.0",
+    "jinja2>=3.1",
+    "weasyprint>=60.0",
+    "opentelemetry-api>=1.20",
+    "opentelemetry-sdk>=1.20",
+    "aiofiles>=23.0",
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+    "sqlalchemy>=2.0",
+    "alembic>=1.13",
+    "redis>=5.0",
+    "celery>=5.3",
+    "openai>=1.0",
+    "anthropic>=0.18",
+    "langchain-core>=0.1.0",
+    "crewai>=0.28.0",
+    "autogen-agentchat>=0.2.0",
+    "mcp>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.3",
+    "mypy>=1.8",
+    "pre-commit>=3.6",
+]
+dashboard = [
+    "streamlit>=1.30",
+    "plotly>=5.18",
+    "pandas>=2.2",
+]
+
+[project.urls]
+Homepage = "https://agentinspector.dev"
+Documentation = "https://docs.agentinspector.dev"
+Repository = "https://github.com/agentinspector/agentinspector"
+
+[project.scripts]
+agentinspector = "agentinspector.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["agentinspector*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.mypy]
+strict = true
+python_version = "3.10"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+ignore = ["E501", "B008", "SIM114"]

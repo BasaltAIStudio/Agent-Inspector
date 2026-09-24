@@ -1,0 +1,10 @@
+
+__pycache__/
+*.pyc
+*.db
+*.sqlite3
+.env
+.vscode/
+.idea/
+calibration_dataset/*.jsonl
+/backend/secret_vault/

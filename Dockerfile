@@ -30,8 +30,7 @@ RUN groupadd -r appuser && useradd -r -g appuser -d /app -s /sbin/nologin appuse
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-COPY backend/ ./backend/
-COPY agentinspector/ ./agentinspector/
+COPY . .
 COPY alembic.ini ./
 COPY migrations/ ./migrations/
 

@@ -1,0 +1,166 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing - Basalt AI Studio</title>
+    <style>
+        :root {
+            --basalt-deep: #121214;
+            --basalt-slate: #F4F4F5;
+            --basalt-cobalt: #3B82F6;
+            --basalt-border: #27272a;
+            --text-main: #fafafa;
+            --text-muted: #a1a1aa;
+        }
+        body {
+            background-color: var(--basalt-deep);
+            color: var(--text-main);
+            font-family: 'Inter', -apple-system, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .pricing-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            max-width: 1100px;
+            width: 90%;
+            padding: 2rem;
+        }
+        .tier {
+            background: #1c1c1f;
+            border: 1px solid var(--basalt-border);
+            border-radius: 1rem;
+            padding: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .tier:hover {
+            transform: translateY(-5px);
+            border-color: var(--basalt-cobalt);
+        }
+        .tier.featured {
+            border: 2px solid var(--basalt-cobalt);
+            position: relative;
+        }
+        .featured-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--basalt-cobalt);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 2px 12px;
+            border-radius: 12px;
+            text-transform: uppercase;
+        }
+        .tier-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+        .tier-price {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+        }
+        .tier-price span {
+            font-size: 1rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 2rem 0;
+            flex-grow: 1;
+        }
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+        .feature-item::before {
+            content: "✓";
+            color: var(--basalt-cobalt);
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .btn {
+            background: var(--basalt-cobalt);
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--basalt-border);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="pricing-container">
+        <!-- Explorer -->
+        <div class="tier">
+            <div class="tier-name">Explorer</div>
+            <div class="tier-price">$0<span>/mo</span></div>
+            <ul class="feature-list">
+                <li class="feature-item">Up to 3 Connected Agents</li>
+                <li class="feature-item">Quick Scan (50 tests)</li>
+                <li class="feature-item">Single-Model Judging</li>
+                <li class="feature-item">Local SQLite Infrastructure</li>
+                <li class="feature-item">Community Support</li>
+            </ul>
+            <a href="#" class="btn btn-outline">Get Started</a>
+        </div>
+        <!-- Professional -->
+        <div class="tier featured">
+            <div class="featured-badge">Recommended</div>
+            <div class="tier-name">Professional</div>
+            <div class="tier-price">$49<span>/mo</span></div>
+            <ul class="feature-list">
+                <li class="feature-item">Up to 20 Connected Agents</li>
+                <li class="feature-item">Deep Scan (250 tests)</li>
+                <li class="feature-item">Cross-Examination Judging</li>
+                <li class="feature-item">Custom Gold-Sets</li>
+                <li class="feature-item">Professional PDF Reports</li>
+                <li class="feature-item">Priority Cloud Hosting</li>
+            </ul>
+            <a href="#" class="btn">Upgrade Now</a>
+        </div>
+        <!-- Enterprise -->
+        <div class="tier">
+            <div class="tier-name">Enterprise</div>
+            <div class="tier-price">Custom</div>
+            <ul class="feature-list">
+                <li class="feature-item">Unlimited Agents</li>
+                <li class="feature-item">Full-Scale Stress Testing</li>
+                <li class="feature-item">Meta-Audited pipeline</li>
+                <li class="feature-item">On-Prem / Sovereign Deployment</li>
+                <li class="feature-item">Real-time Shadow Mode</li>
+                <li class="feature-item">Dedicated Support SLA</li>
+            </ul>
+            <a href="#" class="btn btn-outline">Contact Sales</a>
+        </div>
+    </div>
+</body>
+</html>

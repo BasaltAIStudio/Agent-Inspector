@@ -1,61 +1,37 @@
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Optional
+import uuid
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
+from backend.crypto import encrypt_to_str
 from backend.database import Agent, get_db
 from backend.dependencies import verify_api_key_and_rate_limit
 
 router = APIRouter()
 
 
-@router.post("/agents", status_code=201)
-async def create_agent(body: dict, db: Session = Depends(get_db)) -> dict:
-    from datetime import datetime, timezone
-    import uuid
+class AgentCreateRequest(BaseModel):
+    name: str
+    description: str
+    agent_type: str = "custom"
+    endpoint: Optional[str] = None
+    api_key: Optional[str] = None
 
-    agent_id = str(uuid.uuid4())
-    now = datetime.now(timezone.utc)
-    db_agent = Agent(
-        id=agent_id,
-        name=body["name"],
-        description=body["description"],
-        agent_type=body.get("agent_type", "custom"),
-        endpoint=body.get("endpoint"),
-        api_key=body.get("api_key"),
-    )
-    db.add(db_agent)
-    db.commit()
-    db.refresh(db_agent)
-    return {
-        "id": db_agent.id,
-        "name": db_agent.name,
-        "description": db_agent.description,
-        "agent_type": db_agent.agent_type,
-        "endpoint": db_agent.endpoint,
-        "created_at": db_agent.created_at.isoformat(),
-    }
+    model_config = ConfigDict(str_strip_whitespace=True)
 
 
-@router.get("/agents")
-async def list_agents(db: Session = Depends(get_db)) -> list:
-    agents = db.query(Agent).all()
-    return [
-        {
-            "id": a.id,
-            "name": a.name,
-            "description": a.description,
-            "agent_type": a.agent_type,
-            "endpoint": a.endpoint,
-            "created_at": a.created_at.isoformat(),
-        }
-        for a in agents
-    ]
+def _can_see_all(request: Request) -> bool:
+    return bool(getattr(request.state, "is_admin", False))
 
 
-@router.get("/agents/{agent_id}")
-async def get_agent(agent_id: str, db: Session = Depends(get_db)) -> dict:
-    agent = db.query(Agent).filter(Agent.id == agent_id).first()
-    if not agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
+def _owner_filter(request: Request):
+    return None if _can_see_all(request) else getattr(request.state, "owner", None)
+
+
+def _public_agent(agent: Agent) -> dict:
     return {
         "id": agent.id,
         "name": agent.name,
@@ -66,13 +42,48 @@ async def get_agent(agent_id: str, db: Session = Depends(get_db)) -> dict:
     }
 
 
+@router.post("/agents", status_code=201)
+async def create_agent(body: AgentCreateRequest, request: Request, api_key: str = Depends(verify_api_key_and_rate_limit), db: Session = Depends(get_db)) -> dict:
+    owner = getattr(request.state, "owner", None)
+    agent_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc)
+    db_agent = Agent(id=agent_id, name=body.name, description=body.description, agent_type=body.agent_type, endpoint=body.endpoint, tenant_id=owner)
+    if body.api_key:
+        db_agent.encrypted_api_key = encrypt_to_str(body.api_key)
+    db.add(db_agent)
+    db.commit()
+    db.refresh(db_agent)
+    return _public_agent(db_agent)
+
+
+@router.get("/agents")
+async def list_agents(request: Request, api_key: str = Depends(verify_api_key_and_rate_limit), db: Session = Depends(get_db)) -> list:
+    query = db.query(Agent)
+    owner = _owner_filter(request)
+    if owner:
+        query = query.filter(Agent.tenant_id == owner)
+    return [_public_agent(agent) for agent in query.order_by(Agent.created_at.desc()).all()]
+
+
+@router.get("/agents/{agent_id}")
+async def get_agent(agent_id: str, request: Request, api_key: str = Depends(verify_api_key_and_rate_limit), db: Session = Depends(get_db)) -> dict:
+    query = db.query(Agent).filter(Agent.id == agent_id)
+    owner = _owner_filter(request)
+    if owner:
+        query = query.filter(Agent.tenant_id == owner)
+    agent = query.first()
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    return _public_agent(agent)
+
+
 @router.delete("/agents/{agent_id}")
-async def delete_agent(
-    agent_id: str,
-    api_key: str = Depends(verify_api_key_and_rate_limit),
-    db: Session = Depends(get_db),
-) -> dict:
-    agent = db.query(Agent).filter(Agent.id == agent_id).first()
+async def delete_agent(agent_id: str, request: Request, api_key: str = Depends(verify_api_key_and_rate_limit), db: Session = Depends(get_db)) -> dict:
+    query = db.query(Agent).filter(Agent.id == agent_id)
+    owner = _owner_filter(request)
+    if owner:
+        query = query.filter(Agent.tenant_id == owner)
+    agent = query.first()
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
     db.delete(agent)

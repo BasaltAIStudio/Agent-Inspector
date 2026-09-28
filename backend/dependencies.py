@@ -1,4 +1,5 @@
 from typing import Any, Dict, List, Optional
+import hashlib
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 
@@ -7,6 +8,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from sqlalchemy.orm import Session
 
 from backend.database import APIKeyRecord, AdminAuditLog, SecretVault, get_db
+from backend.crypto import decrypt_from_str, encrypt_to_str
 
 
 class RateLimiter:
@@ -47,7 +49,16 @@ rate_limiter = RateLimiter()
 ip_blocklist = IPBlocklist()
 
 
+def _hash_api_key(api_key: str) -> str:
+    return hashlib.sha256(api_key.encode("utf-8")).hexdigest()
+
+
 def _get_key_record(api_key: str, db: Session) -> Optional[APIKeyRecord]:
+    digest = _hash_api_key(api_key)
+    record = db.query(APIKeyRecord).filter(APIKeyRecord.hashed_key == digest, APIKeyRecord.revoked == False).first()
+    if record:
+        return record
+    # Legacy records are accepted only long enough to migrate them.
     return db.query(APIKeyRecord).filter(APIKeyRecord.key == api_key, APIKeyRecord.revoked == False).first()
 
 
@@ -83,15 +94,13 @@ def _log_admin_action(
 
 
 def _set_secret(db: Session, name: str, value: str) -> None:
-    existing = _get_secret(db, name)
-    if existing:
-        secret = db.query(SecretVault).filter(SecretVault.name == name).first()
-        if secret:
-            secret.value = value
-            db.add(secret)
-            db.commit()
-            return
-    secret = SecretVault(name=name, value=value)
+    secret = db.query(SecretVault).filter(SecretVault.name == name).first()
+    encrypted = encrypt_to_str(value)
+    if secret:
+        secret.encrypted_value = encrypted
+        secret.value = None
+    else:
+        secret = SecretVault(name=name, encrypted_value=encrypted)
     db.add(secret)
     db.commit()
 
@@ -100,6 +109,9 @@ def _get_secret(db: Session, name: str) -> Optional[str]:
     record = db.query(SecretVault).filter(SecretVault.name == name).first()
     if not record:
         return None
+    if record.encrypted_value:
+        return decrypt_from_str(record.encrypted_value)
+    # Legacy plaintext is readable only during migration; writes immediately encrypt it.
     return record.value
 
 
@@ -141,16 +153,20 @@ async def verify_api_key_and_rate_limit(
     record = _get_key_record(api_key, db)
     if not record:
         raise HTTPException(status_code=403, detail="Invalid API key")
+    if not record.hashed_key:
+        record.hashed_key = _hash_api_key(api_key)
     if record.expires_at and record.expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=403, detail="API key expired")
-    if not rate_limiter.is_allowed(api_key, record.rate_limit):
+    if not rate_limiter.is_allowed(record.key, record.rate_limit):
         raise HTTPException(status_code=429, detail="Rate limit exceeded")
     record.last_used_at = datetime.now(timezone.utc)
     db.add(record)
     db.commit()
     if required_scope:
         _enforce_scope(record, required_scope)
-    return api_key
+    request.state.api_key_id = record.key
+    request.state.owner = record.owner
+    return record.key
 
 
 async def verify_admin_api_key(
@@ -158,6 +174,8 @@ async def verify_admin_api_key(
     db: Session = Depends(get_db),
 ) -> str:
     api_key = await verify_api_key_and_rate_limit(request, db)
-    record = _get_key_record(api_key, db)
+    record = db.query(APIKeyRecord).filter(APIKeyRecord.key == api_key, APIKeyRecord.revoked == False).first()
+    if not record:
+        raise HTTPException(status_code=403, detail="Invalid API key")
     _enforce_scope(record, "admin")
     return api_key

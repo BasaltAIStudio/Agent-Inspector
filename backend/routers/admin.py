@@ -75,7 +75,7 @@ async def list_keys(
     return {
         "keys": [
             {
-                "key": k.key,
+                "key_id": k.key,
                 "owner": k.owner,
                 "rate_limit": k.rate_limit,
                 "scopes": k.scopes,
@@ -114,7 +114,6 @@ async def list_agents_admin(
                 "description": a.description,
                 "agent_type": a.agent_type,
                 "endpoint": a.endpoint,
-                "api_key": a.api_key,
             }
             for a in agents
         ]
@@ -170,7 +169,7 @@ async def read_secret(
     if value is None:
         raise HTTPException(status_code=404, detail="Secret not found")
     _log_admin_action(db, "secret.read", admin_key, "secret", name, None, None, success=True)
-    return {"name": name, "value": value}
+    return {"name": name, "configured": True}
 
 
 @router.post("/secrets/{name}/rotate")

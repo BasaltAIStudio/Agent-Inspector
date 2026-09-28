@@ -36,7 +36,8 @@ class APIKeyRecord(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     last_used_at = Column(DateTime, nullable=True)
     revoked = Column(Boolean, default=False)
-    hashed_key = Column(String, nullable=True)
+    hashed_key = Column(String, nullable=True, index=True)
+    workspace_id = Column(String, nullable=True, index=True)
 
 
 class Agent(Base):
@@ -48,7 +49,8 @@ class Agent(Base):
     agent_type = Column(String)
     config = Column(Text)
     endpoint = Column(String)
-    api_key = Column(String)
+    api_key = Column(String, nullable=True)
+    encrypted_api_key = Column(Text, nullable=True)
     tenant_id = Column(String, nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -81,6 +83,9 @@ class Audit(Base):
     medium_count = Column(Integer, default=0)
     low_count = Column(Integer, default=0)
     webhook_url = Column(String, nullable=True)
+    tenant_id = Column(String, nullable=True, index=True)
+    idempotency_key = Column(String, nullable=True, unique=True, index=True)
+    timeout_seconds = Column(Integer, default=300)
     created_at = Column(DateTime, default=datetime.utcnow)
     completed_at = Column(DateTime)
 
@@ -114,7 +119,11 @@ class TaskQueue(Base):
     status = Column(String, default="pending")
     priority = Column(Integer, default=0)
     retries = Column(Integer, default=0)
+    max_retries = Column(Integer, default=3)
     error = Column(Text, nullable=True)
+    next_attempt_at = Column(DateTime, nullable=True, index=True)
+    locked_at = Column(DateTime, nullable=True)
+    worker_id = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     started_at = Column(DateTime, nullable=True)
     finished_at = Column(DateTime, nullable=True)
@@ -199,6 +208,39 @@ class BackupRecord(Base):
     size_bytes = Column(Integer, nullable=True)
     path = Column(String, nullable=True)
     checksum = Column(String, nullable=True)
+
+
+class Workspace(Base):
+    __tablename__ = "workspaces"
+
+    id = Column(String, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    members = relationship("WorkspaceMember", back_populates="workspace", cascade="all, delete-orphan")
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(String, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    memberships = relationship("WorkspaceMember", back_populates="user", cascade="all, delete-orphan")
+
+
+class WorkspaceMember(Base):
+    __tablename__ = "workspace_members"
+
+    id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
+    workspace_id = Column(String, ForeignKey("workspaces.id"), nullable=False, index=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    role = Column(String, nullable=False, default="member")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    workspace = relationship("Workspace", back_populates="members")
+    user = relationship("User", back_populates="memberships")
 
 
 def init_db():
